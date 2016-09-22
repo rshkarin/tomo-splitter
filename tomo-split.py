@@ -65,6 +65,8 @@ def estimate_profile(files, camera_type, patch_radius=16):
     for f in files:
         data = None
 
+        print f
+
         if camera_type == CAMERA_PCO_DIMAX:
             data = io.imread(f)
         elif camera_type == CAMERA_ANDOR:
@@ -187,7 +189,7 @@ def clsuter_profile(prof):
             'dark': idxs[labels == clusters_[icdarks]], \
             'proj': idxs[labels == clusters_[icprojs]]}
 
-def create_output_dirs(files, split_schema, camera_type, output_folder='Recon', tomo_folder='tomo1'):
+def create_output_dirs(files, split_schema, camera_type, output_path=None, output_folder='Recon', tomo_folder='tomo1'):
     if not len(files):
         raise ValueError('There are no files to read.')
 
@@ -197,7 +199,11 @@ def create_output_dirs(files, split_schema, camera_type, output_folder='Recon', 
     input_path = os.path.dirname(os.path.abspath(files[0][0] if camera_type == CAMERA_ANDOR else files[0]))
     root_specimen_dir, spicemen_folder = os.path.split(input_path)
 
-    output_path = os.path.join(root_specimen_dir, output_folder, spicemen_folder, tomo_folder)
+    if output_path is not None:
+        output_path = os.path.join(output_path, spicemen_folder, tomo_folder)
+    else:
+        output_path = os.path.join(root_specimen_dir, output_folder, spicemen_folder, tomo_folder)
+
     frames_paths = {k: os.path.join(output_path, k) for k in split_schema.keys()}
     frames_paths['proj360'] = os.path.join(output_path, 'proj360')
 
@@ -211,6 +217,7 @@ def create_output_dirs(files, split_schema, camera_type, output_folder='Recon', 
 def write_data(files, \
                split_schema, \
                camera_type, \
+               output_path=None, \
                suffix='%04i', \
                ext='.tif', \
                frac_frames_360deg=-1):
@@ -220,7 +227,10 @@ def write_data(files, \
         raise ValueError('Wrong camera type!')
 
     spicemen_folder, frames_paths = \
-            create_output_dirs(files, split_schema, camera_type)
+                    create_output_dirs(files, \
+                                       split_schema, \
+                                       camera_type, \
+                                       output_path=output_path)
 
     for f in files:
         data = None
@@ -276,9 +286,10 @@ def write_data(files, \
             print path_proj + ' -> ' + proj360_dir
             shutil.copy(path_proj, proj360_dir)
 
-def split_data(input_sample_dir, camera_type, patch_radius=16, dimax_sep='@', \
-               andor_batch_size=100, profile_shrinkage_ratio=50, \
-               frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1):
+def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
+               patch_radius=16, dimax_sep='@', andor_batch_size=100, \
+               profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
+               frames_fraction_360deg=0.1):
     files = get_data_pathes(input_sample_dir, \
                             camera_type, \
                             sep=dimax_sep, \
@@ -289,8 +300,11 @@ def split_data(input_sample_dir, camera_type, patch_radius=16, dimax_sep='@', \
     split_schema = split_profile(prof, \
                                  shrinkage_ratio=profile_shrinkage_ratio, \
                                  frac_tolerance=frac_grp_similarity_tolerance)
-    write_data(files, split_schema, camera_type, \
-                frac_frames_360deg=frames_fraction_360deg)
+    write_data(files, \
+               split_schema, \
+               camera_type, \
+               output_path=output_sample_dir, \
+               frac_frames_360deg=frames_fraction_360deg)
 
 def get_sample_paths(input_dir):
     return [os.path.join(input_dir, f) for f in os.listdir(input_dir) \
@@ -327,6 +341,10 @@ def main():
                         metavar=str([CAMERA_ANDOR, CAMERA_PCO_DIMAX]), \
                         type=check_camera_type, \
                         required=True)
+    parser.add_argument("-o", "--output_dir", \
+                        help="Output path where the sample folder is located", \
+                        type=str, \
+                        default=None)
     parser.add_argument("-p", "--patch_radius", \
                         help="The radius of a centered patch to estimate the z-profile", \
                         type=int, \
@@ -362,6 +380,7 @@ def main():
 
     split_data(args.input_dir, \
                args.camera_type, \
+               output_sample_dir=args.output_dir, \
                patch_radius=args.patch_radius, \
                dimax_sep=args.dimax_sep, \
                andor_batch_size=args.andor_batch_size, \
