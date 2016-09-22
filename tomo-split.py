@@ -9,12 +9,9 @@ import numpy as np
 from skimage import io, filters, measure, feature
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
+logging.captureWarnings(True)
 logger = logging.getLogger('tomo-splitter')
-hdlr = logging.FileHandler(os.path.join(os.path.dirname(os.path.realpath(__file__)),'sample-splitting.log'))
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.WARNING)
+logger.propagate = False
 
 CAMERA_ANDOR = 'Andor'
 CAMERA_PCO_DIMAX = 'dimax'
@@ -73,7 +70,11 @@ def estimate_profile(files, camera_type, patch_radius=16):
     for f in files:
         data = None
 
-        logger.info(str(f))
+        if type(f).__module__ == np.__name__:
+            for pth in f:
+                logger.info(pth)
+        else:
+            logger.info(f)
 
         if camera_type == CAMERA_PCO_DIMAX:
             data = io.imread(f)
@@ -300,17 +301,37 @@ def write_data(files, \
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                patch_radius=16, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
-               frames_fraction_360deg=0.1):
+               frames_fraction_360deg=0.1, logs_path=None):
+    if logs_path is not None:
+        log_path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
+        print 'Logging to: ' + log_path
+
+        hdlr = logging.FileHandler(log_path)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+        hdlr.setFormatter(formatter)
+        logger.addHandler(hdlr)
+        logger.setLevel(logging.INFO)
+        logger.propagate = True
+
+    logger.info('Processing of sample %s' % os.path.split(input_sample_dir)[1])
+
+    logger.info('Gathering of data pathes ...')
     files = get_data_pathes(input_sample_dir, \
                             camera_type, \
                             sep=dimax_sep, \
                             batch_size=andor_batch_size)
+    logger.info('Estimating of data profile...')
     prof = estimate_profile(files, \
                             camera_type, \
                             patch_radius=patch_radius)
+
+    logger.info('Defining of splitting schema...')
     split_schema = split_profile(prof, \
                                  shrinkage_ratio=profile_shrinkage_ratio, \
                                  frac_tolerance=frac_grp_similarity_tolerance)
+    logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
+
+    logger.info('Data saving...')
     write_data(files, \
                split_schema, \
                camera_type, \
@@ -386,6 +407,10 @@ def main():
                         max=1.0, \
                         action=Range, \
                         default=0.1)
+    parser.add_argument("-l", "--logs_path", \
+                        help="The the path to the logs", \
+                        type=str, \
+                        default=None)
 
     args = parser.parse_args()
 
@@ -397,7 +422,8 @@ def main():
                andor_batch_size=args.andor_batch_size, \
                profile_shrinkage_ratio=args.profile_shrinkage_ratio, \
                frac_grp_similarity_tolerance=args.similarity_tolerance, \
-               frames_fraction_360deg=args.fact_frames_360deg)
+               frames_fraction_360deg=args.fact_frames_360deg, \
+               logs_path=args.logs_path)
 
 if __name__ == "__main__":
     sys.exit(main())

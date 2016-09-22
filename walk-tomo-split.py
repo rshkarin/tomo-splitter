@@ -41,7 +41,7 @@ def get_recon_path(path, root_folder, recon_folder='Recon'):
         comps = [first] + comps
         path = last
 
-    return os.path.join(last, first, recon_folder, *comps)
+    return os.path.split(os.path.join(last, first, recon_folder, *comps))[0]
 
 def get_sample_paths(search_dir, sample_names, recon_folder):
     out = []
@@ -55,16 +55,13 @@ def get_sample_paths(search_dir, sample_names, recon_folder):
 def start_walking(input_dir, camera_type, sample_names, root_folder, \
                   recon_folder='Recon', patch_radius=16, dimax_sep='@', \
                   andor_batch_size=100, profile_shrinkage_ratio=50, \
-                  frac_grp_similarity_tolerance=0.1, \
-                  frames_fraction_360deg=0.1):
+                  frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1, \
+                  logs_path=None):
     sample_paths = get_sample_paths(input_dir, sample_names, recon_folder)
     output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder) \
                     for p in sample_paths]
 
     for sample_path, output_path in zip(sample_paths, output_paths):
-        logger.info(output_path)
-        logger.info(sample_path)
-
         splitter.split_data(sample_path, \
                             camera_type, \
                             output_sample_dir=output_path, \
@@ -73,7 +70,8 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                             andor_batch_size=andor_batch_size, \
                             profile_shrinkage_ratio=profile_shrinkage_ratio, \
                             frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
-                            frames_fraction_360deg=frames_fraction_360deg)
+                            frames_fraction_360deg=frames_fraction_360deg, \
+                            logs_path=logs_path)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
 
@@ -128,6 +126,10 @@ def main():
                         max=1.0, \
                         action=splitter.Range, \
                         default=0.1)
+    parser.add_argument("-l", "--logs_path", \
+                        help="The the path to the logs", \
+                        type=str, \
+                        default=None)
 
     args = parser.parse_args()
 
@@ -141,7 +143,8 @@ def main():
                   andor_batch_size=args.andor_batch_size, \
                   profile_shrinkage_ratio=args.profile_shrinkage_ratio, \
                   frac_grp_similarity_tolerance=args.similarity_tolerance, \
-                  frames_fraction_360deg=args.fact_frames_360deg)
+                  frames_fraction_360deg=args.fact_frames_360deg, \
+                  logs_path=args.logs_path)
 
 if __name__ == "__main__":
     sys.exit(main())
