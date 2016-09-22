@@ -3,6 +3,14 @@ import sys
 import argparse
 import importlib
 import ast
+import logging
+logger = logging.getLogger('walk-tomo-splitter')
+hdlr = logging.FileHandler(os.path.join(os.path.dirname(os.path.realpath(__file__)),'walked-splitting.log'))
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.WARNING)
+
 splitter = importlib.import_module('tomo-split')
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
@@ -49,22 +57,23 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                   andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, \
                   frames_fraction_360deg=0.1):
-    sample_paths = get_sample_paths(input_dir, sample_names, reco_folder)
+    sample_paths = get_sample_paths(input_dir, sample_names, recon_folder)
     output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder) \
                     for p in sample_paths]
 
     for sample_path, output_path in zip(sample_paths, output_paths):
-        print output_path
-        print sample_path
-        # splitter.split_data(sample_path, \
-        #                     camera_type, \
-        #                     output_sample_dir=output_path, \
-        #                     patch_radius=patch_radius, \
-        #                     dimax_sep=dimax_sep, \
-        #                     andor_batch_size=andor_batch_size, \
-        #                     profile_shrinkage_ratio=profile_shrinkage_ratio, \
-        #                     frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
-        #                     frames_fraction_360deg=frames_fraction_360deg)
+        logger.info(output_path)
+        logger.info(sample_path)
+
+        splitter.split_data(sample_path, \
+                            camera_type, \
+                            output_sample_dir=output_path, \
+                            patch_radius=patch_radius, \
+                            dimax_sep=dimax_sep, \
+                            andor_batch_size=andor_batch_size, \
+                            profile_shrinkage_ratio=profile_shrinkage_ratio, \
+                            frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
+                            frames_fraction_360deg=frames_fraction_360deg)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
 
@@ -74,8 +83,8 @@ def main():
                         required=True)
     parser.add_argument("-c", "--camera_type", \
                         help="The type of camera used for experiment", \
-                        metavar=str([CAMERA_ANDOR, CAMERA_PCO_DIMAX]), \
-                        type=check_camera_type, \
+                        metavar=str([splitter.CAMERA_ANDOR, splitter.CAMERA_PCO_DIMAX]), \
+                        type=splitter.check_camera_type, \
                         required=True)
     parser.add_argument("-n", "--sample_names", \
                         help="List of sample names to process", \
@@ -85,7 +94,7 @@ def main():
                         help="The name of root folder", \
                         type=str, \
                         required=True)
-    parser.add_argument("-r", "--reco_folder", \
+    parser.add_argument("-e", "--recon_folder", \
                         help="The name of reconstruction folder", \
                         type=str, \
                         default='Recon')
@@ -110,23 +119,23 @@ def main():
                         type=float, \
                         min=0.01, \
                         max=1.0, \
-                        action=Range, \
+                        action=splitter.Range, \
                         default=0.1)
     parser.add_argument("-f", "--fact_frames_360deg", \
                         help="The fraction of projections to find an exact 360 degree projection", \
                         type=float, \
                         min=0.01, \
                         max=1.0, \
-                        action=Range, \
+                        action=splitter.Range, \
                         default=0.1)
 
     args = parser.parse_args()
 
     start_walking(args.input_dir, \
                   args.camera_type, \
-                  sample_names, \
-                  root_folder, \
-                  reco_folder=args.reco_folder, \
+                  args.sample_names, \
+                  args.root_folder, \
+                  recon_folder=args.recon_folder, \
                   patch_radius=args.patch_radius, \
                   dimax_sep=args.dimax_sep, \
                   andor_batch_size=args.andor_batch_size, \

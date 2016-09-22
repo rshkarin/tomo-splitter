@@ -3,10 +3,18 @@ import sys
 import re
 import shutil
 import argparse
+import logging
 
 import numpy as np
 from skimage import io, filters, measure, feature
 from sklearn.cluster import MeanShift, estimate_bandwidth
+
+logger = logging.getLogger('tomo-splitter')
+hdlr = logging.FileHandler(os.path.join(os.path.dirname(os.path.realpath(__file__)),'sample-splitting.log'))
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr)
+logger.setLevel(logging.WARNING)
 
 CAMERA_ANDOR = 'Andor'
 CAMERA_PCO_DIMAX = 'dimax'
@@ -65,7 +73,7 @@ def estimate_profile(files, camera_type, patch_radius=16):
     for f in files:
         data = None
 
-        print f
+        logger.info(str(f))
 
         if camera_type == CAMERA_PCO_DIMAX:
             data = io.imread(f)
@@ -249,7 +257,8 @@ def write_data(files, \
                                 '_'.join([spicemen_folder, suffix + ext]) % \
                                            frame_idxs[name])
                     io.imsave(path, _frame)
-                    print path
+
+                    logger.info(path)
 
                     frame_idxs[name] += 1
                     frame_idx += 1
@@ -272,7 +281,9 @@ def write_data(files, \
         for i,path_proj in enumerate(sub_projs):
             proj_data = io.imread(path_proj)
             result = measure.compare_mse(proj_data, first_proj_data)
-            print 'MSE of projection #%d: %f' % (len(projs) - start_idx + i, result)
+
+            logger.info('MSE of projection #%d: %f' % (len(projs) - start_idx + i, result))
+
             min_val, min_idx = (result, i) if min_val is None or result < min_val \
                                 else (min_val, min_idx)
 
@@ -280,10 +291,10 @@ def write_data(files, \
 
         proj_start, proj_end = 0,  len(projs) - offset
 
-        print 'Extract projections: %d - %d' % (0, len(projs) - offset)
+        logger.info('Extract projections: %d - %d' % (0, len(projs) - offset))
 
         for path_proj in projs[proj_start:proj_end+1]:
-            print path_proj + ' -> ' + proj360_dir
+            logger.info(path_proj + ' -> ' + proj360_dir)
             shutil.copy(path_proj, proj360_dir)
 
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
