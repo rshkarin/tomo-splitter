@@ -1,6 +1,9 @@
+import os
+import sys
+import argparse
 import importlib
 import ast
-importlib.import_module('tomo-split')
+splitter = importlib.import_module('tomo-split')
 
 #http://stackoverflow.com/questions/2859674/converting-python-list-of-strings-to-their-type
 def _tryeval(val):
@@ -20,6 +23,7 @@ def _list_type(string):
 
 def get_recon_path(path, root_folder, recon_folder='Recon'):
     comps = []
+
     while True:
         last, first = os.path.split(path)
 
@@ -41,25 +45,26 @@ def get_sample_paths(search_dir, sample_names, recon_folder):
     return out
 
 def start_walking(input_dir, camera_type, sample_names, root_folder, \
-                  reco_folder='Recon', patch_radius=16, dimax_sep='@', \
+                  recon_folder='Recon', patch_radius=16, dimax_sep='@', \
                   andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, \
                   frames_fraction_360deg=0.1):
     sample_paths = get_sample_paths(input_dir, sample_names, reco_folder)
-    output_paths = [get_recon_path(p, root_folder) for p in sample_paths]
+    output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder) \
+                    for p in sample_paths]
 
     for sample_path, output_path in zip(sample_paths, output_paths):
         print output_path
         print sample_path
-        # split_data(sample_path, \
-        #            camera_type, \
-        #            output_sample_dir=output_path, \
-        #            patch_radius=patch_radius, \
-        #            dimax_sep=dimax_sep, \
-        #            andor_batch_size=andor_batch_size, \
-        #            profile_shrinkage_ratio=profile_shrinkage_ratio, \
-        #            frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
-        #            frames_fraction_360deg=frames_fraction_360deg)
+        # splitter.split_data(sample_path, \
+        #                     camera_type, \
+        #                     output_sample_dir=output_path, \
+        #                     patch_radius=patch_radius, \
+        #                     dimax_sep=dimax_sep, \
+        #                     andor_batch_size=andor_batch_size, \
+        #                     profile_shrinkage_ratio=profile_shrinkage_ratio, \
+        #                     frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
+        #                     frames_fraction_360deg=frames_fraction_360deg)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
 
