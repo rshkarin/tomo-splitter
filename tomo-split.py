@@ -303,10 +303,14 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
                frames_fraction_360deg=0.1, logs_path=None):
     if logs_path is not None:
-        log_path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
-        print 'Logging to: ' + log_path
+        path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
 
-        hdlr = logging.FileHandler(log_path)
+        if not os.path.exists(logs_path):
+            os.makedirs(logs_path)
+
+        print 'Logging to: ' + path
+
+        hdlr = logging.FileHandler(path)
         formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
