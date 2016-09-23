@@ -60,22 +60,34 @@ def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100):
     return files
 
 def calculate_roi(data, size_off_ratio=0.1, window_size=80, margin=30):
-    depth, height, width = data.shape
+    depth, height, width = None, None, None
+    is_data3d = len(data.shape) > 2
+
+    if is_data3d:
+        depth, height, width = data.shape
+    else:
+        height, width = data.shape
+
     off_h, off_w = height * size_off_ratio, width * size_off_ratio
 
     nh, nw = int(np.floor((height - off_h * 2)/float(window_size + margin * 2))), \
              int(np.floor((width - off_w * 2)/float(window_size + margin * 2)))
 
     rwlen = window_size + margin * 2
-    avg_cum_sum = np.zeros(depth)
+    avg_cum_sum = np.zeros(depth) if is_data3d else 0
+    _roi = None
 
     for i in xrange(nh):
         for j in xrange(nw):
-            _roi = np.index_exp[:, \
-                                off_h + i*rwlen+margin:off_h + i*rwlen+margin+window_size,\
-                                off_w + j*rwlen+margin:off_w + j*rwlen+margin+window_size]
+            h_roi_s, h_roi_e = off_h + i*rwlen+margin, off_h + i*rwlen+margin+window_size
+            w_roi_s, w_roi_e = off_w + j*rwlen+margin, off_w + j*rwlen+margin+window_size
 
-            avg_cum_sum += data[_roi].sum(axis=(1,2))
+            if is_data3d:
+                _roi = np.index_exp[:, h_roi_s:h_roi_e, w_roi_s:w_roi_e]
+            else:
+                _roi = np.index_exp[h_roi_s:h_roi_e, w_roi_s:w_roi_e]
+
+            avg_cum_sum += data[_roi].sum(axis=(1,2) if is_data3d else (0,1))
 
     return avg_cum_sum / float(nh * nw)
 
