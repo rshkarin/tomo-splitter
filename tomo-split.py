@@ -269,7 +269,8 @@ def write_data(files, \
                output_path=None, \
                suffix='%04i', \
                ext='.tif', \
-               frac_frames_360deg=-1):
+               frac_frames_360deg=-1, \
+               multitiff=True):
     frame_idxs, frame_idx = {k: 0 for k in split_schema.keys()}, 0
 
     if not camera_is_available(camera_type):
@@ -285,7 +286,10 @@ def write_data(files, \
         data = None
 
         if camera_type == CAMERA_PCO_DIMAX:
-            data = io.imread(f)
+            if multitiff:
+                data = io.imread(f)
+            else:
+                data = read_dimax_data_batch(f)
         elif camera_type == CAMERA_ANDOR:
             data = read_andor_data_batch(f)
         else:
@@ -385,7 +389,8 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                split_schema, \
                camera_type, \
                output_path=output_sample_dir, \
-               frac_frames_360deg=frames_fraction_360deg)
+               frac_frames_360deg=frames_fraction_360deg, \
+               multitiff=multitiff)
 
 def get_sample_paths(input_dir):
     return [os.path.join(input_dir, f) for f in os.listdir(input_dir) \
