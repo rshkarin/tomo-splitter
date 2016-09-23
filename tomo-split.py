@@ -238,14 +238,28 @@ def clsuter_profile(prof):
             'dark': idxs[labels == clusters_[icdarks]], \
             'proj': idxs[labels == clusters_[icprojs]]}
 
-def create_output_dirs(files, split_schema, camera_type, output_path=None, output_folder='Recon', tomo_folder='tomo1'):
+def create_output_dirs(files, \
+                       split_schema, \
+                       camera_type, \
+                       output_path=None, \
+                       output_folder='Recon', \
+                       tomo_folder='tomo1', \
+                       multitiff=True):
     if not len(files):
         raise ValueError('There are no files to read.')
 
     if not camera_is_available(camera_type):
         raise ValueError('Wrong camera type!')
 
-    input_path = os.path.dirname(os.path.abspath(files[0][0] if camera_type == CAMERA_ANDOR else files[0]))
+    input_path = None
+    if camera_type == CAMERA_ANDOR:
+        input_path = os.path.dirname(os.path.abspath(files[0][0]))
+    elif camera_type == CAMERA_PCO_DIMAX:
+        if multitiff:
+            input_path = os.path.dirname(os.path.abspath(files[0]))
+        else:
+            input_path = os.path.dirname(os.path.abspath(files[0][0]))
+
     root_specimen_dir, spicemen_folder = os.path.split(input_path)
 
     if output_path is not None:
@@ -280,7 +294,8 @@ def write_data(files, \
                     create_output_dirs(files, \
                                        split_schema, \
                                        camera_type, \
-                                       output_path=output_path)
+                                       output_path=output_path, \
+                                       multitiff=multitiff)
 
     for f in files:
         data = None
