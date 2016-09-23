@@ -29,7 +29,7 @@ def _list_type(string):
     lst = [_tryeval(l) for l in lst]
     return lst
 
-def get_recon_path(path, root_folder, recon_folder='Recon'):
+def get_recon_path(path, root_folder, recon_folder='Recon', data_subpath=None):
     comps = []
 
     while True:
@@ -41,13 +41,21 @@ def get_recon_path(path, root_folder, recon_folder='Recon'):
         comps = [first] + comps
         path = last
 
+    if data_subpath is not None:
+        for i,c in enumerate(comps):
+            if c in data_subpath:
+                comps.pop(i)
+
     return os.path.split(os.path.join(last, first, recon_folder, *comps))[0]
 
-def get_sample_paths(search_dir, sample_names, recon_folder):
+def get_sample_paths(search_dir, sample_names, recon_folder, data_subpath=None):
     out = []
 
     for root, dirs, files in os.walk(search_dir):
         if recon_folder not in root and os.path.split(root)[1] in sample_names:
+            if data_subpath is not None:
+                root = os.path.join(root, data_subpath)
+
             out.append(root)
 
     return out
@@ -56,9 +64,9 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                   recon_folder='Recon', window_size=80, margin=30, \
                   dimax_sep='@', andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1, \
-                  logs_path=None):
-    sample_paths = get_sample_paths(input_dir, sample_names, recon_folder)
-    output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder) \
+                  logs_path=None, data_subpath=None):
+    sample_paths = get_sample_paths(input_dir, sample_names, recon_folder, data_subpath=data_subpath)
+    output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder, data_subpath=data_subpath) \
                     for p in sample_paths]
 
     for sample_path, output_path in zip(sample_paths, output_paths):
@@ -97,6 +105,10 @@ def main():
                         help="The name of reconstruction folder", \
                         type=str, \
                         default='Recon')
+    parser.add_argument("-b", "--data_subpath", \
+                        help="The subpath to the data of the sample folder", \
+                        type=str, \
+                        default=None)
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \
@@ -150,7 +162,8 @@ def main():
                   profile_shrinkage_ratio=args.profile_shrinkage_ratio, \
                   frac_grp_similarity_tolerance=args.similarity_tolerance, \
                   frames_fraction_360deg=args.fact_frames_360deg, \
-                  logs_path=args.logs_path)
+                  logs_path=args.logs_path, \
+                  data_subpath=args.data_subpath)
 
 if __name__ == "__main__":
     sys.exit(main())
