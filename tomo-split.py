@@ -334,6 +334,7 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                                  shrinkage_ratio=profile_shrinkage_ratio, \
                                  frac_tolerance=frac_grp_similarity_tolerance)
     logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
+    print str(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
 
     logger.info('Data saving...')
     write_data(files, \
