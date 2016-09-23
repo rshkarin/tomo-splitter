@@ -361,7 +361,7 @@ class Range(argparse.Action):
         kwargs["metavar"] = "[%d-%d]" % (self.min, self.max)
         super(Range, self).__init__(*args, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, value, option_string=None):
         if not (self.min <= value <= self.max):
             raise argparse.ArgumentError(self, 'invalid choice: %r (choose from [%d-%d])' % (value, self.min, self.max))
         setattr(namespace, self.dest, value)
