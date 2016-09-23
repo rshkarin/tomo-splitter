@@ -431,10 +431,10 @@ def main():
                         help="Output path where the sample folder is located", \
                         type=str, \
                         default=None)
-    parser.add_argument("-k", "--multitiff", \
-                        help="The data is a several multi-tiff files", \
-                        type=bool, \
-                        default=True)
+    parser.add_argument("-k", "--no-multitiff", \
+                        help="The data is a series of tif files", \
+                        dest='multitiff', \
+                        action='store_false')
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \

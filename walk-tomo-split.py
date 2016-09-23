@@ -110,10 +110,10 @@ def main():
                         help="The subpath to the data of the sample folder", \
                         type=str, \
                         default=None)
-    parser.add_argument("-k", "--multitiff", \
-                        help="The data is a several multi-tiff files", \
-                        type=bool, \
-                        default=True)
+    parser.add_argument("-k", "--no-multitiff", \
+                        help="The data is a series of tif files", \
+                        dest='multitiff', \
+                        action='store_false')
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \
@@ -154,7 +154,7 @@ def main():
                         default=None)
 
     args = parser.parse_args()
-
+    print args.multitiff
     start_walking(args.input_dir, \
                   args.camera_type, \
                   args.sample_names, \
