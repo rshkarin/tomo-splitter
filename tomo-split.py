@@ -26,6 +26,15 @@ def read_andor_data_batch(files, shape=(2160,2568), roi_shape=(2160,2560), dtype
 
     return output
 
+def read_dimax_data_batch(files):
+    size = io.imread(files[0]).shape
+    output = np.zeros((len(files),) + size, dtype=np.float32)
+
+    for i,path in enumerate(files):
+        output[i] = io.imread(path)
+
+    return output
+
 def _get_idx(name):
     v = re.findall('\d+', name)
     return int(v[0]) if len(v) else 0
@@ -36,7 +45,7 @@ def _get_name_idx(name):
 def camera_is_available(camera_type):
     return camera_type in [CAMERA_ANDOR, CAMERA_PCO_DIMAX]
 
-def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100):
+def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100, multitiff=True):
     if not camera_is_available(camera_type):
         raise ValueError('Wrong camera type!')
 
@@ -48,6 +57,11 @@ def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100):
     if camera_type == CAMERA_PCO_DIMAX:
         files.sort(key=lambda e: (sep in e, _get_idx(e)))
         files = [os.path.join(input_dir, f) for f in files]
+
+        if not multitiff:
+            n_batches = int(np.ceil(len(files) / float(batch_size)))
+            files = np.array_split(files, n_batches)
+
     elif camera_type == CAMERA_ANDOR:
         files_andor = [(f, _get_name_idx(f)) for f in files]
         files_andor.sort(key=lambda e: e[1])
@@ -91,7 +105,7 @@ def calculate_roi(data, size_off_ratio=0.1, window_size=80, margin=30):
 
     return avg_cum_sum / float(nh * nw)
 
-def estimate_profile(files, camera_type, window_size=80, margin=30):
+def estimate_profile(files, camera_type, window_size=80, margin=30, multitiff=True):
     profile = np.array([])
 
     if not camera_is_available(camera_type):
@@ -107,7 +121,10 @@ def estimate_profile(files, camera_type, window_size=80, margin=30):
             logger.info(f)
 
         if camera_type == CAMERA_PCO_DIMAX:
-            data = io.imread(f)
+            if multitiff:
+                data = io.imread(f)
+            else:
+                data = read_dimax_data_batch(f)
         elif camera_type == CAMERA_ANDOR:
             data = read_andor_data_batch(f)
         else:
@@ -324,7 +341,7 @@ def write_data(files, \
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                window_size=80, margin=30, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
-               frames_fraction_360deg=0.1, logs_path=None):
+               frames_fraction_360deg=0.1, logs_path=None, multitiff=True):
     if logs_path is not None:
         path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
 
@@ -346,23 +363,20 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
     files = get_data_pathes(input_sample_dir, \
                             camera_type, \
                             sep=dimax_sep, \
-                            batch_size=andor_batch_size)
+                            batch_size=andor_batch_size, \
+                            multitiff=multitiff)
     logger.info('Estimating of data profile...')
     prof = estimate_profile(files, \
                             camera_type, \
                             window_size=window_size, \
-                            margin=margin)
-
-    # import matplotlib
-    # matplotlib.use('pdf')
-    # import matplotlib.pyplot as plt
-    # plt.plot(prof)
-    # plt.show()
+                            margin=margin, \
+                            multitiff=multitiff)
 
     logger.info('Defining of splitting schema...')
-    split_schema = split_profile(prof, \
-                                 shrinkage_ratio=profile_shrinkage_ratio, \
-                                 frac_tolerance=frac_grp_similarity_tolerance)
+    # split_schema = split_profile(prof, \
+    #                              shrinkage_ratio=profile_shrinkage_ratio, \
+    #                              frac_tolerance=frac_grp_similarity_tolerance)
+    split_schema = clsuter_profile(prof)
     logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
     print str(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
 
@@ -412,6 +426,10 @@ def main():
                         help="Output path where the sample folder is located", \
                         type=str, \
                         default=None)
+    parser.add_argument("-k", "--multitiff", \
+                        help="The data is a several multi-tiff files", \
+                        type=bool, \
+                        default=True)
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \
@@ -463,7 +481,8 @@ def main():
                profile_shrinkage_ratio=args.profile_shrinkage_ratio, \
                frac_grp_similarity_tolerance=args.similarity_tolerance, \
                frames_fraction_360deg=args.fact_frames_360deg, \
-               logs_path=args.logs_path)
+               logs_path=args.logs_path, \
+               multitiff=args.multitiff)
 
 if __name__ == "__main__":
     sys.exit(main())

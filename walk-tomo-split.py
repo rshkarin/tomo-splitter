@@ -64,7 +64,7 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                   recon_folder='Recon', window_size=80, margin=30, \
                   dimax_sep='@', andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1, \
-                  logs_path=None, data_subpath=None):
+                  logs_path=None, data_subpath=None, multitiff=True):
     sample_paths = get_sample_paths(input_dir, sample_names, recon_folder, data_subpath=data_subpath)
     output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder, data_subpath=data_subpath) \
                     for p in sample_paths]
@@ -80,7 +80,8 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                             profile_shrinkage_ratio=profile_shrinkage_ratio, \
                             frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
                             frames_fraction_360deg=frames_fraction_360deg, \
-                            logs_path=logs_path)
+                            logs_path=logs_path, \
+                            multitiff=multitiff)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
 
@@ -109,6 +110,10 @@ def main():
                         help="The subpath to the data of the sample folder", \
                         type=str, \
                         default=None)
+    parser.add_argument("-k", "--multitiff", \
+                        help="The data is a several multi-tiff files", \
+                        type=bool, \
+                        default=True)
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \
@@ -163,7 +168,8 @@ def main():
                   frac_grp_similarity_tolerance=args.similarity_tolerance, \
                   frames_fraction_360deg=args.fact_frames_360deg, \
                   logs_path=args.logs_path, \
-                  data_subpath=args.data_subpath)
+                  data_subpath=args.data_subpath, \
+                  multitiff=args.multitiff)
 
 if __name__ == "__main__":
     sys.exit(main())
