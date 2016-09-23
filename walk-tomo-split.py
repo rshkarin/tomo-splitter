@@ -53,8 +53,8 @@ def get_sample_paths(search_dir, sample_names, recon_folder):
     return out
 
 def start_walking(input_dir, camera_type, sample_names, root_folder, \
-                  recon_folder='Recon', patch_radius=16, dimax_sep='@', \
-                  andor_batch_size=100, profile_shrinkage_ratio=50, \
+                  recon_folder='Recon', window_size=80, margin=30, \
+                  dimax_sep='@', andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1, \
                   logs_path=None):
     sample_paths = get_sample_paths(input_dir, sample_names, recon_folder)
@@ -65,7 +65,8 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
         splitter.split_data(sample_path, \
                             camera_type, \
                             output_sample_dir=output_path, \
-                            patch_radius=patch_radius, \
+                            window_size=window_size, \
+                            margin=margin, \
                             dimax_sep=dimax_sep, \
                             andor_batch_size=andor_batch_size, \
                             profile_shrinkage_ratio=profile_shrinkage_ratio, \
@@ -96,10 +97,14 @@ def main():
                         help="The name of reconstruction folder", \
                         type=str, \
                         default='Recon')
-    parser.add_argument("-p", "--patch_radius", \
-                        help="The radius of a centered patch to estimate the z-profile", \
+    parser.add_argument("-w", "--window_size", \
+                        help="The window size of a patch to estimate the z-profile", \
                         type=int, \
-                        default=16)
+                        default=80)
+    parser.add_argument("-m", "--margin", \
+                        help="The amount of margin between the z-profile windows", \
+                        type=int, \
+                        default=30)
     parser.add_argument("-d", "--dimax_sep", \
                         help="The separation symbol of pco dimax files (e.g. raw@00001.tif)", \
                         type=str, \
@@ -138,7 +143,8 @@ def main():
                   args.sample_names, \
                   args.root_folder, \
                   recon_folder=args.recon_folder, \
-                  patch_radius=args.patch_radius, \
+                  window_size=args.window_size, \
+                  margin=args.margin, \
                   dimax_sep=args.dimax_sep, \
                   andor_batch_size=args.andor_batch_size, \
                   profile_shrinkage_ratio=args.profile_shrinkage_ratio, \

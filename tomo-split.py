@@ -59,10 +59,28 @@ def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100):
 
     return files
 
-def estimate_profile(files, camera_type, patch_radius=16):
+def calculate_roi(data, size_off_ratio=0.1, window_size=80, margin=30):
+    depth, height, width = data.shape
+    off_h, off_w = height * size_off_ratio, width * size_off_ratio
+
+    nh, nw = int(np.floor((height - off_h * 2)/float(window_size + margin * 2))), \
+             int(np.floor((width - off_w * 2)/float(window_size + margin * 2)))
+
+    rwlen = window_size + margin * 2
+    avg_cum_sum = np.zeros(depth)
+
+    for i in xrange(nh):
+        for j in xrange(nw):
+            _roi = np.index_exp[:, \
+                                off_h + i*rwlen+margin:off_h + i*rwlen+margin+window_size,\
+                                off_w + j*rwlen+margin:off_w + j*rwlen+margin+window_size]
+
+            avg_cum_sum += data[_roi].sum(axis=(1,2))
+
+    return avg_cum_sum / float(nh * nw)
+
+def estimate_profile(files, camera_type, window_size=80, margin=30):
     profile = np.array([])
-    height, width = None, None
-    _roi = None
 
     if not camera_is_available(camera_type):
         raise ValueError('Wrong camera type!')
@@ -83,16 +101,9 @@ def estimate_profile(files, camera_type, patch_radius=16):
         else:
             raise ValueError('Wrong camera type!')
 
-        if height is None or width is None:
-            height, width = data.shape[1:]
-
-        if _roi is None:
-            hc, wc = int(height/2), int(width/2)
-            _roi = np.index_exp[:,\
-                                hc-patch_radius:hc+patch_radius+1,\
-                                wc-patch_radius:wc+patch_radius+1]
-
-        profile = np.append(profile, data[_roi].sum(axis=(1,2)))
+        profile = np.append(profile, calculate_roi(data, \
+                                                   window_size=window_size, \
+                                                   margin=margin))
 
     return profile
 
@@ -299,7 +310,7 @@ def write_data(files, \
             shutil.copy(path_proj, proj360_dir)
 
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
-               patch_radius=16, dimax_sep='@', andor_batch_size=100, \
+               window_size=80, margin=30, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
                frames_fraction_360deg=0.1, logs_path=None):
     if logs_path is not None:
@@ -327,7 +338,14 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
     logger.info('Estimating of data profile...')
     prof = estimate_profile(files, \
                             camera_type, \
-                            patch_radius=patch_radius)
+                            window_size=window_size, \
+                            margin=margin)
+
+    # import matplotlib
+    # matplotlib.use('pdf')
+    # import matplotlib.pyplot as plt
+    # plt.plot(prof)
+    # plt.show()
 
     logger.info('Defining of splitting schema...')
     split_schema = split_profile(prof, \
@@ -382,10 +400,14 @@ def main():
                         help="Output path where the sample folder is located", \
                         type=str, \
                         default=None)
-    parser.add_argument("-p", "--patch_radius", \
-                        help="The radius of a centered patch to estimate the z-profile", \
+    parser.add_argument("-w", "--window_size", \
+                        help="The window size of a patch to estimate the z-profile", \
                         type=int, \
-                        default=16)
+                        default=80)
+    parser.add_argument("-m", "--margin", \
+                        help="The amount of margin between the z-profile windows", \
+                        type=int, \
+                        default=30)
     parser.add_argument("-d", "--dimax_sep", \
                         help="The separation symbol of pco dimax files (e.g. raw@00001.tif)", \
                         type=str, \
@@ -422,7 +444,8 @@ def main():
     split_data(args.input_dir, \
                args.camera_type, \
                output_sample_dir=args.output_dir, \
-               patch_radius=args.patch_radius, \
+               window_size=args.window_size, \
+               margin=args.margin, \
                dimax_sep=args.dimax_sep, \
                andor_batch_size=args.andor_batch_size, \
                profile_shrinkage_ratio=args.profile_shrinkage_ratio, \
