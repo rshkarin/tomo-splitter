@@ -45,14 +45,21 @@ def _get_name_idx(name):
 def camera_is_available(camera_type):
     return camera_type in [CAMERA_ANDOR, CAMERA_PCO_DIMAX]
 
-def get_data_pathes(input_dir, camera_type, sep='@', batch_size=100, multitiff=True):
+def get_data_pathes(input_dir, \
+                    camera_type, \
+                    sep='@', \
+                    batch_size=100, \
+                    multitiff=True, \
+                    min_fsize=100):
     if not camera_is_available(camera_type):
         raise ValueError('Wrong camera type!')
 
     def ext_by_camera(name):
         return '.dat' if name == CAMERA_ANDOR else '.tif'
 
-    files = [f for f in os.listdir(input_dir) if f.endswith(ext_by_camera(camera_type))]
+    files = [f for f in os.listdir(input_dir) \
+                    if f.endswith(ext_by_camera(camera_type)) and \
+                       os.stat(os.path.join(input_dir, f)).st_size > min_fsize]
 
     if camera_type == CAMERA_PCO_DIMAX:
         files.sort(key=lambda e: (sep in e, _get_idx(e)))
