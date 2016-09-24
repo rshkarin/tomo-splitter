@@ -219,11 +219,11 @@ def split_profile(arr, shrinkage_ratio=50, frac_tolerance=0.1):
 
     return out
 
-def clsuter_profile(prof):
+def cluster_profile(prof, quantile=0.5):
     idxs = np.arange(len(prof), dtype=np.int64)
 
     X = np.array(zip(prof,np.zeros(len(prof))), dtype=np.int)
-    bandwidth = estimate_bandwidth(X, quantile=0.3)
+    bandwidth = estimate_bandwidth(X, quantile=quantile)
     ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
     ms.fit(X)
     labels = ms.labels_
@@ -423,7 +423,7 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
     # split_schema = split_profile(prof, \
     #                              shrinkage_ratio=profile_shrinkage_ratio, \
     #                              frac_tolerance=frac_grp_similarity_tolerance)
-    split_schema = clsuter_profile(prof)
+    split_schema = cluster_profile(prof)
     logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
     print str(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
 
