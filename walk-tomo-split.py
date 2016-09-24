@@ -81,6 +81,7 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                             frac_grp_similarity_tolerance=frac_grp_similarity_tolerance, \
                             frames_fraction_360deg=frames_fraction_360deg, \
                             logs_path=logs_path, \
+                            data_subpath=data_subpath, \
                             multitiff=multitiff)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
@@ -154,7 +155,7 @@ def main():
                         default=None)
 
     args = parser.parse_args()
-    print args.multitiff
+
     start_walking(args.input_dir, \
                   args.camera_type, \
                   args.sample_names, \

@@ -238,12 +238,29 @@ def clsuter_profile(prof):
             'dark': idxs[labels == clusters_[icdarks]], \
             'proj': idxs[labels == clusters_[icprojs]]}
 
+def reduce_path(path, data_subpath=None):
+    if data_subpath is None:
+        return path
+
+    if data_subpath not in path:
+        return path
+
+    while True:
+        last, first = os.path.split(path)
+        path = last
+
+        if data_subpath not in path:
+            break
+
+    return path
+
 def create_output_dirs(files, \
                        split_schema, \
                        camera_type, \
                        output_path=None, \
                        output_folder='Recon', \
                        tomo_folder='tomo1', \
+                       data_subpath=None, \
                        multitiff=True):
     if not len(files):
         raise ValueError('There are no files to read.')
@@ -259,6 +276,7 @@ def create_output_dirs(files, \
             input_path = os.path.dirname(os.path.abspath(files[0]))
         else:
             input_path = os.path.dirname(os.path.abspath(files[0][0]))
+            input_path = reduce_path(input_path, data_subpath=data_subpath)
 
     root_specimen_dir, spicemen_folder = os.path.split(input_path)
 
@@ -284,6 +302,7 @@ def write_data(files, \
                suffix='%04i', \
                ext='.tif', \
                frac_frames_360deg=-1, \
+               data_subpath=None, \
                multitiff=True):
     frame_idxs, frame_idx = {k: 0 for k in split_schema.keys()}, 0
 
@@ -295,7 +314,8 @@ def write_data(files, \
                                        split_schema, \
                                        camera_type, \
                                        output_path=output_path, \
-                                       multitiff=multitiff)
+                                       multitiff=multitiff, \
+                                       data_subpath=data_subpath)
 
     for f in files:
         data = None
@@ -360,7 +380,8 @@ def write_data(files, \
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                window_size=80, margin=30, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
-               frames_fraction_360deg=0.1, logs_path=None, multitiff=True):
+               frames_fraction_360deg=0.1, logs_path=None, data_subpath=None, \
+               multitiff=True):
     if logs_path is not None:
         path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
 
@@ -405,6 +426,7 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                camera_type, \
                output_path=output_sample_dir, \
                frac_frames_360deg=frames_fraction_360deg, \
+               data_subpath=data_subpath, \
                multitiff=multitiff)
 
 def get_sample_paths(input_dir):
@@ -444,6 +466,10 @@ def main():
                         required=True)
     parser.add_argument("-o", "--output_dir", \
                         help="Output path where the sample folder is located", \
+                        type=str, \
+                        default=None)
+    parser.add_argument("-b", "--data_subpath", \
+                        help="The subpath to the data of the sample folder", \
                         type=str, \
                         default=None)
     parser.add_argument("-k", "--no-multitiff", \
@@ -502,6 +528,7 @@ def main():
                frac_grp_similarity_tolerance=args.similarity_tolerance, \
                frames_fraction_360deg=args.fact_frames_360deg, \
                logs_path=args.logs_path, \
+               data_subpath=args.data_subpath, \
                multitiff=args.multitiff)
 
 if __name__ == "__main__":
