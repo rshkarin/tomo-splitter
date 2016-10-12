@@ -234,16 +234,25 @@ def cluster_profile(prof, quantile=0.5):
     n_clusters_ = len(labels_unique)
     clusters_ = np.arange(n_clusters_, dtype=np.int)
 
-    if n_clusters_ != 3:
-        raise ValueError("Something wrong, the dataset should have only 3 types of images.")
+    if n_clusters_ < 3:
+        raise ValueError("Something wrong it has %d classes, the " \
+                         "dataset should have more than 3 types of images." % n_clusters_)
 
-    icflats, icdarks = np.argmax(cluster_centers_1d).astype(np.int64), np.argmin(cluster_centers_1d).astype(np.int64)
-    pval = np.delete(cluster_centers_1d, [icflats, icdarks])[0]
-    icprojs = np.where(cluster_centers_1d ==pval)[0][0]
+    ic_sorted = np.argsort(cluster_centers_1d).astype(np.int64)
 
-    return {'flat': idxs[labels == clusters_[icflats]], \
-            'dark': idxs[labels == clusters_[icdarks]], \
-            'proj': idxs[labels == clusters_[icprojs]]}
+    dark_idxs = idxs[labels == clusters_[ic_sorted[0]]]
+    projs_idxs = idxs[labels == clusters_[ic_sorted[1]]]
+
+    flats_idxs = np.array([idxs[labels == clusters_[i]] for i in ic_sorted[2:]])
+    flats_idxs_means = np.array([np.mean(idxs_arr) for idxs_arr in flats_idxs])
+    flats_idxs = flats_idxs[np.argsort(flats_idxs_means)]
+
+    out = { 'dark': dark_idxs, 'proj': projs_idxs }
+
+    for i, idxs_arr in enumerate(flats_idxs):
+        out['flat{0}'.format(i + 1) if len(flats_idxs) > 1 else 'flat'] = idxs_arr
+
+    return out
 
 def reduce_path(path, data_subpath=None):
     if data_subpath is None:
