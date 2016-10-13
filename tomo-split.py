@@ -219,7 +219,10 @@ def split_profile(arr, shrinkage_ratio=50, frac_tolerance=0.1):
 
     return out
 
-def cluster_profile(prof, quantile=0.5):
+def cluster_profile(prof, quantile=0.5, profile_enhancing_ratio=5., perc_value=.9):
+    max_th = np.max(prof) * perc_value
+    prof[prof > max_th] *= profile_enhancing_ratio
+    
     idxs = np.arange(len(prof), dtype=np.int64)
 
     X = np.array(zip(prof,np.zeros(len(prof))), dtype=np.int)
