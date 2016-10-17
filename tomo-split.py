@@ -222,7 +222,7 @@ def split_profile(arr, shrinkage_ratio=50, frac_tolerance=0.1):
 def cluster_profile(prof, quantile=0.5, profile_enhancing_ratio=5., perc_value=.9):
     max_th = np.max(prof) * perc_value
     prof[prof > max_th] *= profile_enhancing_ratio
-    
+
     idxs = np.arange(len(prof), dtype=np.int64)
 
     X = np.array(zip(prof,np.zeros(len(prof))), dtype=np.int)
@@ -401,6 +401,13 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
                frames_fraction_360deg=0.1, logs_path=None, data_subpath=None, \
                multitiff=True):
+
+    hdlr = logging.StreamHandler(sys.stdout)
+    hdlr.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+
     if logs_path is not None:
         path = os.path.join(logs_path, os.path.split(input_sample_dir)[1] + '.log')
 
@@ -410,10 +417,10 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
         print 'Logging to: ' + path
 
         hdlr = logging.FileHandler(path)
+        logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
-        logger.setLevel(logging.INFO)
         logger.propagate = True
 
     logger.info('Processing of sample %s' % os.path.split(input_sample_dir)[1])
@@ -495,6 +502,10 @@ def main():
                         help="The data is a series of tif files", \
                         dest='multitiff', \
                         action='store_false')
+    parser.add_argument("--no-360deg-check", \
+                        help="Try to find correct 360 degree slice from the end", \
+                        dest='check_360deg', \
+                        action='store_false')
     parser.add_argument("-w", "--window_size", \
                         help="The window size of a patch to estimate the z-profile", \
                         type=int, \
@@ -535,6 +546,11 @@ def main():
                         default=None)
 
     args = parser.parse_args()
+
+    if (args.camera_type == CAMERA_ANDOR) and args.check_360deg:
+        logger.warning("If you use Andor camera, better to turn off searching of " \
+                       "a slice obtained exact on 360 degree (--no-360deg-check).")
+
 
     split_data(args.input_dir, \
                args.camera_type, \
