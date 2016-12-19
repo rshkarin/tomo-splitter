@@ -64,7 +64,8 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                   recon_folder='Recon', window_size=80, margin=30, \
                   dimax_sep='@', andor_batch_size=100, profile_shrinkage_ratio=50, \
                   frac_grp_similarity_tolerance=0.1, frames_fraction_360deg=0.1, \
-                  logs_path=None, data_subpath=None, multitiff=True):
+                  logs_path=None, data_subpath=None, multitiff=True, \
+                  schema=None):
     sample_paths = get_sample_paths(input_dir, sample_names, recon_folder, data_subpath=data_subpath)
     output_paths = [get_recon_path(p, root_folder, recon_folder=recon_folder, data_subpath=data_subpath) \
                     for p in sample_paths]
@@ -82,7 +83,8 @@ def start_walking(input_dir, camera_type, sample_names, root_folder, \
                             frames_fraction_360deg=frames_fraction_360deg, \
                             logs_path=logs_path, \
                             data_subpath=data_subpath, \
-                            multitiff=multitiff)
+                            multitiff=multitiff, \
+                            schema=schema)
 def main():
     parser = argparse.ArgumentParser('The tomo-splitter which walked away.')
 
@@ -149,6 +151,10 @@ def main():
                         max=1.0, \
                         action=splitter.Range, \
                         default=0.1)
+    parser.add_argument("--schema", \
+                        help="Manually specified splitting schema", \
+                        type=str, \
+                        default=None)
     parser.add_argument("-l", "--logs_path", \
                         help="The the path to the logs", \
                         type=str, \
@@ -170,7 +176,8 @@ def main():
                   frames_fraction_360deg=args.fact_frames_360deg, \
                   logs_path=args.logs_path, \
                   data_subpath=args.data_subpath, \
-                  multitiff=args.multitiff)
+                  multitiff=args.multitiff, \
+                  schema=args.schema)
 
 if __name__ == "__main__":
     sys.exit(main())

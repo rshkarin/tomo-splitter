@@ -400,7 +400,7 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                window_size=80, margin=30, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
                frames_fraction_360deg=0.1, logs_path=None, data_subpath=None, \
-               multitiff=True):
+               multitiff=True, schema=None):
 
     hdlr = logging.StreamHandler(sys.stdout)
     hdlr.setLevel(logging.WARNING)
@@ -431,18 +431,21 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                             sep=dimax_sep, \
                             batch_size=andor_batch_size, \
                             multitiff=multitiff)
-    logger.info('Estimating of data profile...')
-    prof = estimate_profile(files, \
-                            camera_type, \
-                            window_size=window_size, \
-                            margin=margin, \
-                            multitiff=multitiff)
 
-    logger.info('Defining of splitting schema...')
-    # split_schema = split_profile(prof, \
-    #                              shrinkage_ratio=profile_shrinkage_ratio, \
-    #                              frac_tolerance=frac_grp_similarity_tolerance)
-    split_schema = cluster_profile(prof)
+    if schema is None:
+        logger.info('Estimating of data profile...')
+        prof = estimate_profile(files, \
+                                camera_type, \
+                                window_size=window_size, \
+                                margin=margin, \
+                                multitiff=multitiff)
+
+        logger.info('Defining of splitting schema...')
+    
+        split_schema = cluster_profile(prof)
+    else:
+        split_schema = schema
+
     logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
     print str(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
 
