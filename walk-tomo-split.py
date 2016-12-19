@@ -153,7 +153,7 @@ def main():
                         default=0.1)
     parser.add_argument("--schema", \
                         help="Manually specified splitting schema", \
-                        type=str, \
+                        type=_tryeval, \
                         default=None)
     parser.add_argument("-l", "--logs_path", \
                         help="The the path to the logs", \
