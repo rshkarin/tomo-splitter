@@ -404,7 +404,7 @@ def manual_schema(schema):
 
     offset = 0
     for key in keys:
-        vals = np.arange(offset, schema[key])
+        vals = np.arange(offset, offset + schema[key])
         offset += schema[key]
         schema[key] = vals
 
