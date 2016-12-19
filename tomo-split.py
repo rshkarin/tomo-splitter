@@ -403,10 +403,10 @@ def manual_schema(schema):
         keys = ['dark', 'flat1', 'proj', 'flat2']
 
     offset = 0
-    for i in xrange(keys):
-        vals = np.arange(offset, schema[keys[i]])
-        offset += schema[keys[i]]
-        schema[keys[i]] = vals
+    for key in keys:
+        vals = np.arange(offset, schema[key])
+        offset += schema[key]
+        schema[key] = vals
 
     return schema        
 
