@@ -396,6 +396,20 @@ def write_data(files, \
             logger.info(path_proj + ' -> ' + proj360_dir)
             shutil.copy(path_proj, proj360_dir)
 
+def manual_schema(schema):
+    if len(schema) == 3:
+        keys = ['dark', 'flat', 'proj']
+    elif len(schema) == 4:
+        keys = ['dark', 'flat1', 'proj', 'flat2']
+
+    offset = 0
+    for i in xrange(keys):
+        vals = np.arange(offset, schema[keys[i]])
+        offset += schema[keys[i]]
+        schema[keys[i]] = vals
+
+    return schema        
+
 def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
                window_size=80, margin=30, dimax_sep='@', andor_batch_size=100, \
                profile_shrinkage_ratio=50, frac_grp_similarity_tolerance=0.1, \
@@ -444,7 +458,7 @@ def split_data(input_sample_dir, camera_type, output_sample_dir=None, \
     
         split_schema = cluster_profile(prof)
     else:
-        split_schema = schema
+        split_schema = manual_schema(schema)
 
     logger.info(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
     print str(['%s: %d' % (k, len(v)) for k,v in split_schema.items()])
